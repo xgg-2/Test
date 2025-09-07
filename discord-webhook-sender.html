@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord WebHook Manager</title>
+    <style>
+        :root {
+            --primary: #2f3349;
+            --secondary: #36393f;
+            --accent: #5865f2;
+            --success: #00d26a;
+            --danger: #f04747;
+            --warning: #faa61a;
+            --text-primary: #ffffff;
+            --text-secondary: #b9bbbe;
+            --text-muted: #72767d;
+            --bg-primary: #202225;
+            --bg-secondary: #36393f;
+            --bg-tertiary: #40444b;
+            --border: #2f3136;
+            --hover: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: auto;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        /* Form Section */
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: all 0.15s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Avatar Section */
+        .avatar-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar-preview {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.25rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* File Upload */
+        .file-upload {
+            position: relative;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .file-upload:hover {
+            border-color: var(--accent);
+            background: rgba(88, 101, 242, 0.05);
+        }
+
+        .file-upload.dragover {
+            border-color: var(--accent);
+            background: rgba(88, 101, 242, 0.1);
+        }
+
+        .file-upload-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-upload-icon {
+            font-size: 2rem;
+            color: var(--text-muted);
+        }
+
+        .file-preview {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            display: none;
+        }
+
+        /* Embed Section */
+        .embed-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            transition: background 0.15s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.15s ease;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+
+        .embed-content {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .embed-content.active {
+            display: block;
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #4752c4;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            position: sticky;
+            top: 6rem;
+            height: fit-content;
+        }
+
+        .discord-preview {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .preview-content {
+            padding: 1rem;
+        }
+
+        .message-preview {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .message-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .message-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-author {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .message-text {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message-embed {
+            margin-top: 0.5rem;
+            border-left: 4px solid var(--accent);
+            background: var(--bg-tertiary);
+            border-radius: 0 4px 4px 0;
+            padding: 1rem;
+        }
+
+        .embed-title {
+            font-weight: 600;
+            color: #00b0f4;
+            margin-bottom: 0.5rem;
+        }
+
+        .embed-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: rgba(0, 210, 106, 0.1);
+            border: 1px solid rgba(0, 210, 106, 0.3);
+            color: var(--success);
+        }
+
+        .status-error {
+            background: rgba(240, 71, 71, 0.1);
+            border: 1px solid rgba(240, 71, 71, 0.3);
+            color: var(--danger);
+        }
+
+        .status-loading {
+            background: rgba(250, 166, 26, 0.1);
+            border: 1px solid rgba(250, 166, 26, 0.3);
+            color: var(--warning);
+        }
+
+        /* Saved Webhooks */
+        .webhook-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .webhook-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .webhook-item:hover {
+            background: var(--hover);
+        }
+
+        .webhook-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .webhook-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .webhook-url {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .webhook-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .btn-small {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 4px;
+        }
+
+        /* Character Counter */
+        .char-counter {
+            text-align: left;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .char-counter.over-limit {
+            color: var(--danger);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+                gap: 1.5rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .avatar-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .preview-section {
+                position: static;
+                order: -1;
+            }
+
+            .file-upload {
+                padding: 1.5rem 1rem;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .logo {
+                font-size: 1rem;
+            }
+
+            .logo-icon {
+                width: 28px;
+                height: 28px;
+            }
+
+            .main-content {
+                padding: 0.5rem;
+            }
+
+            .card {
+                padding: 0.75rem;
+            }
+
+            .file-upload {
+                padding: 1rem 0.5rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Smooth Transitions */
+        .card, .form-input, .btn, .webhook-item {
+            transition: all 0.15s ease;
+        }
+
+        /* Focus States */
+        .btn:focus, .form-input:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">⚡</div>
+                    <span>Discord WebHook Manager</span>
+                </div>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>متصل</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Form Section -->
+            <div class="form-section">
+                <!-- Webhook Configuration -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🔗</div>
+                        إعدادات الويب هوك
+                    </div>
+                    
+                    <form id="webhookForm">
+                        <div class="form-group">
+                            <label class="form-label" for="webhookUrl">Webhook URL</label>
+                            <input type="url" id="webhookUrl" class="form-input" 
+                                   placeholder="https://discord.com/api/webhooks/..." required>
+                        </div>
+
+                        <div id="savedWebhooks" class="webhook-list"></div>
+                    </form>
+                </div>
+
+                <!-- Bot Customization -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🤖</div>
+                        تخصيص البوت
+                    </div>
+                    
+                    <div class="avatar-section">
+                        <div class="avatar-preview" id="avatarPreview">B</div>
+                        <div style="flex: 1;">
+                            <div class="form-group">
+                                <label class="form-label" for="username">اسم البوت</label>
+                                <input type="text" id="username" class="form-input" 
+                                       placeholder="WebHook Bot">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="avatarUrl">رابط الصورة</label>
+                                <input type="url" id="avatarUrl" class="form-input" 
+                                       placeholder="https://example.com/avatar.png">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Content -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">💬</div>
+                        محتوى الرسالة
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="content">النص</label>
+                        <textarea id="content" class="form-input form-textarea" 
+                                  placeholder="اكتب رسالتك هنا..."></textarea>
+                        <div class="char-counter" id="contentCounter">0/2000</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">إرفاق ملف</label>
+                        <div class="file-upload" id="fileUpload">
+                            <input type="file" class="file-upload-input" id="fileInput" accept="*/*">
+                            <div class="file-upload-content">
+                                <div class="file-upload-icon">📎</div>
+                                <div>اختر ملف أو اسحبه هنا</div>
+                                <small style="color: var(--text-muted);">الحد الأقصى: 25 MB</small>
+                            </div>
+                        </div>
+                        <div class="file-preview" id="filePreview"></div>
+                    </div>
+                </div>
+
+                <!-- Embed -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🎨</div>
+                        رسالة مدمجة (Embed)
+                    </div>
+                    
+                    <div class="embed-toggle" onclick="toggleEmbed()">
+                        <div class="toggle-switch" id="embedToggle"></div>
+                        <span>تفعيل الرسالة المدمجة</span>
+                    </div>
+
+                    <div class="embed-content" id="embedContent">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="embedTitle">العنوان</label>
+                                <input type="text" id="embedTitle" class="form-input" 
+                                       placeholder="عنوان الرسالة">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="embedColor">اللون</label>
+                                <input type="color" id="embedColor" class="color-picker" value="#5865F2">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="embedDescription">الوصف</label>
+                            <textarea id="embedDescription" class="form-input form-textarea" 
+                                      placeholder="وصف تفصيلي..."></textarea>
+                            <div class="char-counter" id="embedCounter">0/4096</div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="embedAuthor">الكاتب</label>
+                                <input type="text" id="embedAuthor" class="form-input" 
+                                       placeholder="اسم الكاتب">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="embedFooter">التذييل</label>
+                                <input type="text" id="embedFooter" class="form-input" 
+                                       placeholder="نص التذييل">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Send Button -->
+                <button type="submit" class="btn btn-primary btn-block" id="sendButton" form="webhookForm">
+                    <span>إرسال</span>
+                </button>
+
+                <!-- Status Message -->
+                <div class="status-message" id="statusMessage"></div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-section">
+                <div class="discord-preview">
+                    <div class="preview-header">
+                        <span>#</span>
+                        <span>general</span>
+                    </div>
+                    <div class="preview-content">
+                        <div class="message-preview">
+                            <div class="message-avatar" id="previewAvatar">B</div>
+                            <div class="message-body">
+                                <div class="message-author" id="previewUsername">WebHook Bot</div>
+                                <div class="message-text" id="previewContent">معاينة الرسالة...</div>
+                                <div class="message-embed" id="previewEmbed" style="display: none;">
+                                    <div class="embed-title" id="previewEmbedTitle"></div>
+                                    <div class="embed-description" id="previewEmbedDescription"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let embedEnabled = false;
+        
+        // DOM elements
+        const form = document.getElementById('webhookForm');
+        const fileInput = document.getElementById('fileInput');
+        const fileUpload = document.getElementById('fileUpload');
+        const filePreview = document.getElementById('filePreview');
+        const statusMessage = document.getElementById('statusMessage');
+        const sendButton = document.getElementById('sendButton');
+        
+        // Preview elements
+        const previewAvatar = document.getElementById('previewAvatar');
+        const previewUsername = document.getElementById('previewUsername');
+        const previewContent = document.getElementById('previewContent');
+        const previewEmbed = document.getElementById('previewEmbed');
+        const avatarPreview = document.getElementById('avatarPreview');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            loadSavedData();
+            updatePreview();
+        });
+
+        function setupEventListeners() {
+            // Form inputs
+            ['username', 'avatarUrl', 'content', 'embedTitle', 'embedDescription'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updatePreview);
+            });
+            
+            document.getElementById('embedColor').addEventListener('input', updatePreview);
+            
+            // File upload
+            fileInput.addEventListener('change', handleFileSelect);
+            fileUpload.addEventListener('dragover', handleDragOver);
+            fileUpload.addEventListener('dragleave', handleDragLeave);
+            fileUpload.addEventListener('drop', handleFileDrop);
+            
+            // Form submission
+            form.addEventListener('submit', handleSubmit);
+            
+            // Character counters
+            setupCharacterCounter('content', 'contentCounter', 2000);
+            setupCharacterCounter('embedDescription', 'embedCounter', 4096);
+            
+            // Save webhook on blur
+            document.getElementById('webhookUrl').addEventListener('blur', saveWebhookToList);
+        }
+
+        function toggleEmbed() {
+            embedEnabled = !embedEnabled;
+            const toggle = document.getElementById('embedToggle');
+            const content = document.getElementById('embedContent');
+            
+            if (embedEnabled) {
+                toggle.classList.add('active');
+                content.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+                content.classList.remove('active');
+            }
+            
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const username = document.getElementById('username').value || 'WebHook Bot';
+            const avatarUrl = document.getElementById('avatarUrl').value;
+            const content = document.getElementById('content').value || 'معاينة الرسالة...';
+            
+            // Update username
+            previewUsername.textContent = username;
+            previewContent.textContent = content;
+            
+            // Update avatar
+            if (avatarUrl) {
+                previewAvatar.innerHTML = `<img src="${avatarUrl}" alt="Avatar" onerror="this.parentElement.innerHTML='${username.charAt(0).toUpperCase()}'">`;
+                avatarPreview.innerHTML = `<img src="${avatarUrl}" alt="Avatar" onerror="this.parentElement.innerHTML='${username.charAt(0).toUpperCase()}'">`;
+            } else {
+                const initial = username.charAt(0).toUpperCase();
+                previewAvatar.textContent = initial;
+                avatarPreview.textContent = initial;
+            }
+            
+            // Update embed
+            if (embedEnabled) {
+                const embedTitle = document.getElementById('embedTitle').value;
+                const embedDescription = document.getElementById('embedDescription').value;
+                const embedColor = document.getElementById('embedColor').value;
+                
+                if (embedTitle || embedDescription) {
+                    previewEmbed.style.display = 'block';
+                    previewEmbed.style.borderLeftColor = embedColor;
+                    document.getElementById('previewEmbedTitle').textContent = embedTitle;
+                    document.getElementById('previewEmbedDescription').textContent = embedDescription;
+                } else {
+                    previewEmbed.style.display = 'none';
+                }
+            } else {
+                previewEmbed.style.display = 'none';
+            }
+        }
+
+        function setupCharacterCounter(inputId, counterId, maxLength) {
+            const input = document.getElementById(inputId);
+            const counter = document.getElementById(counterId);
+            
+            input.addEventListener('input', function() {
+                const length = this.value.length;
+                counter.textContent = `${length}/${maxLength}`;
+                
+                if (length > maxLength) {
+                    counter.classList.add('over-limit');
+                } else {
+                    counter.classList.remove('over-limit');
+                }
+            });
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            showFilePreview(file);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+        }
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                fileInput.files = e.dataTransfer.files;
+                showFilePreview(file);
+            }
+        }
+
+        function showFilePreview(file) {
+            if (!file) {
+                filePreview.style.display = 'none';
+                return;
+            }
+            
+            const size = (file.size / 1024 / 1024).toFixed(2);
+            const type = file.type || 'غير معروف';
+            
+            filePreview.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="font-size: 1.5rem;">📎</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">${file.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                            ${size} MB • ${type}
+                        </div>
+                    </div>
+                    <button type="button" onclick="clearFile()" style="background: var(--danger); color: white; border: none; border-radius: 4px; padding: 0.25rem 0.5rem; cursor: pointer;">
+                        ✕
+                    </button>
+                </div>
+            `;
+            filePreview.style.display = 'block';
+        }
+
+        function clearFile() {
+            fileInput.value = '';
+            filePreview.style.display = 'none';
+        }
+
+        function saveWebhookToList() {
+            const url = document.getElementById('webhookUrl').value;
+            const name = document.getElementById('username').value || 'WebHook جديد';
+            
+            if (!url) return;
+            
+            let savedWebhooks = JSON.parse(localStorage.getItem('savedWebhooks') || '[]');
+            
+            const existingIndex = savedWebhooks.findIndex(w => w.url === url);
+            if (existingIndex > -1) {
+                savedWebhooks[existingIndex].name = name;
+                savedWebhooks[existingIndex].lastUsed = Date.now();
+            } else {
+                savedWebhooks.push({
+                    url,
+                    name,
+                    id: Date.now(),
+                    lastUsed: Date.now()
+                });
+            }
+            
+            // Keep only last 5 webhooks
+            savedWebhooks = savedWebhooks.sort((a, b) => b.lastUsed - a.lastUsed).slice(0, 5);
+            
+            localStorage.setItem('savedWebhooks', JSON.stringify(savedWebhooks));
+            displaySavedWebhooks();
+        }
+
+        function displaySavedWebhooks() {
+            const savedWebhooks = JSON.parse(localStorage.getItem('savedWebhooks') || '[]');
+            const container = document.getElementById('savedWebhooks');
+            
+            if (savedWebhooks.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = savedWebhooks.map(webhook => `
+                <div class="webhook-item" onclick="loadWebhook('${webhook.url}', '${webhook.name}')">
+                    <div class="webhook-info">
+                        <div class="webhook-name">${webhook.name}</div>
+                        <div class="webhook-url">${webhook.url}</div>
+                    </div>
+                    <div class="webhook-actions">
+                        <button type="button" class="btn btn-small" style="background: var(--accent); color: white;" 
+                                onclick="event.stopPropagation(); loadWebhook('${webhook.url}', '${webhook.name}')">
+                            تحميل
+                        </button>
+                        <button type="button" class="btn btn-small" style="background: var(--danger); color: white;" 
+                                onclick="event.stopPropagation(); deleteWebhook(${webhook.id})">
+                            حذف
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadWebhook(url, name) {
+            document.getElementById('webhookUrl').value = url;
+            document.getElementById('username').value = name;
+            updatePreview();
+        }
+
+        function deleteWebhook(id) {
+            let savedWebhooks = JSON.parse(localStorage.getItem('savedWebhooks') || '[]');
+            savedWebhooks = savedWebhooks.filter(w => w.id !== id);
+            localStorage.setItem('savedWebhooks', JSON.stringify(savedWebhooks));
+            displaySavedWebhooks();
+        }
+
+        function loadSavedData() {
+            displaySavedWebhooks();
+            
+            // Load saved preferences
+            const savedUsername = localStorage.getItem('defaultUsername');
+            const savedAvatarUrl = localStorage.getItem('defaultAvatarUrl');
+            
+            if (savedUsername) {
+                document.getElementById('username').value = savedUsername;
+            }
+            if (savedAvatarUrl) {
+                document.getElementById('avatarUrl').value = savedAvatarUrl;
+            }
+        }
+
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const webhookUrl = document.getElementById('webhookUrl').value;
+            const username = document.getElementById('username').value;
+            const avatarUrl = document.getElementById('avatarUrl').value;
+            const content = document.getElementById('content').value;
+            const file = fileInput.files[0];
+            
+            // Embed data
+            const embedTitle = document.getElementById('embedTitle').value;
+            const embedDescription = document.getElementById('embedDescription').value;
+            const embedColor = parseInt(document.getElementById('embedColor').value.replace('#', ''), 16);
+            const embedAuthor = document.getElementById('embedAuthor').value;
+            const embedFooter = document.getElementById('embedFooter').value;
+
+            // Validation
+            if (!content && !file && !embedEnabled) {
+                showStatus('يجب إدخال محتوى أو إرفاق ملف!', 'error');
+                return;
+            }
+
+            if (file && file.size > 25 * 1024 * 1024) {
+                showStatus('حجم الملف كبير جداً! الحد الأقصى 25 MB', 'error');
+                return;
+            }
+
+            // Start loading
+            sendButton.disabled = true;
+            sendButton.innerHTML = '<div class="loading-spinner"></div><span>جاري الإرسال...</span>';
+            showStatus('جاري إرسال البيانات...', 'loading');
+
+            try {
+                const formData = new FormData();
+                
+                // Prepare payload
+                const payload = {};
+                if (content) payload.content = content;
+                if (username) payload.username = username;
+                if (avatarUrl) payload.avatar_url = avatarUrl;
+
+                // Add embed if enabled
+                if (embedEnabled && (embedTitle || embedDescription)) {
+                    const embed = {};
+                    if (embedTitle) embed.title = embedTitle;
+                    if (embedDescription) embed.description = embedDescription;
+                    if (embedColor) embed.color = embedColor;
+                    if (embedAuthor) embed.author = { name: embedAuthor };
+                    if (embedFooter) embed.footer = { text: embedFooter };
+                    
+                    payload.embeds = [embed];
+                }
+
+                formData.append('payload_json', JSON.stringify(payload));
+                
+                // Add file if present
+                if (file) {
+                    formData.append('file', file);
+                }
+
+                // Send request
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    showStatus('✅ تم الإرسال بنجاح!', 'success');
+                    saveWebhookToList();
+                    
+                    // Save user preferences
+                    localStorage.setItem('defaultUsername', username);
+                    localStorage.setItem('defaultAvatarUrl', avatarUrl);
+                    
+                    // Clear form (except webhook and user settings)
+                    document.getElementById('content').value = '';
+                    clearFile();
+                    
+                    if (embedEnabled) {
+                        document.getElementById('embedTitle').value = '';
+                        document.getElementById('embedDescription').value = '';
+                        document.getElementById('embedAuthor').value = '';
+                        document.getElementById('embedFooter').value = '';
+                    }
+                    
+                    updatePreview();
+                } else {
+                    let errorMsg = 'خطأ في الإرسال';
+                    
+                    switch (response.status) {
+                        case 400:
+                            errorMsg = 'بيانات غير صحيحة - تأكد من الرابط والمحتوى';
+                            break;
+                        case 404:
+                            errorMsg = 'الويب هوك غير موجود - تأكد من الرابط';
+                            break;
+                        case 429:
+                            const retryAfter = response.headers.get('retry-after') || '60';
+                            errorMsg = `تم الإرسال بكثرة - انتظر ${retryAfter} ثانية`;
+                            break;
+                        case 413:
+                            errorMsg = 'الملف كبير جداً';
+                            break;
+                        default:
+                            errorMsg = `خطأ ${response.status} - تأكد من الرابط`;
+                    }
+                    
+                    showStatus(errorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                showStatus('خطأ في الشبكة - تأكد من الاتصال بالإنترنت', 'error');
+            } finally {
+                sendButton.disabled = false;
+                sendButton.innerHTML = '<span>إرسال</span>';
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!sendButton.disabled) {
+                    form.dispatchEvent(new Event('submit'));
+                }
+            }
+        });
+
+        // Auto-resize textareas
+        function setupAutoResize() {
+            const textareas = document.querySelectorAll('textarea');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = this.scrollHeight + 'px';
+                });
+            });
+        }
+
+        setupAutoResize();
+
+        // Service Worker for offline functionality (optional)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // Register service worker if needed
+            });
+        }
+
+        // Update status indicator
+        function updateConnectionStatus() {
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-indicator span');
+            
+            if (navigator.onLine) {
+                statusDot.style.background = 'var(--success)';
+                statusText.textContent = 'متصل';
+            } else {
+                statusDot.style.background = 'var(--danger)';
+                statusText.textContent = 'غير متصل';
+            }
+        }
+
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        updateConnectionStatus();
+
+        // PWA functionality
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        // Touch gestures for mobile
+        let touchStartY = 0;
+        document.addEventListener('touchstart', e => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchmove', e => {
+            if (e.touches[0].clientY - touchStartY > 150 && window.scrollY === 0) {
+                // Pull to refresh functionality if needed
+            }
+        });
+
+        // Initialize tooltips and animations after DOM load
+        setTimeout(() => {
+            document.body.style.opacity = '1';
+        }, 100);
+    </script>
+</body>
+</html>
